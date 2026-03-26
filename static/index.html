@@ -19,12 +19,12 @@
   --text:     #1a1f2e;
   --text2:    #4a5568;
   --text3:    #9aa3b2;
-  --accent:   #1a56db;
-  --accent2:  #1447b0;
+  --accent:   #245a8c;
+  --accent2:  #1d4d78;
   --green:    #16a34a;
   --red:      #dc2626;
   --yellow:   #ca8a04;
-  --blue:     #1a56db;
+  --blue:     #245a8c;
   --radius:   8px;
   --radius2:  14px;
   --shadow:   0 2px 12px rgba(0,0,0,.08);
@@ -53,7 +53,7 @@ a { color: inherit; text-decoration: none; }
 
 .sidebar {
   width: 240px;
-  background: #1a1f2e;
+  background: linear-gradient(to right, #0f1520 0%, #1a2a3f 60%, #243550 100%);
   border-right: 1px solid #252b3a;
   display: flex;
   flex-direction: column;
@@ -73,7 +73,7 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: -.5px;
   color: #fff;
 }
-.logo-mark span { color: #4d90fe; }
+.logo-mark span { color: #245a8c; }
 .logo-sub { font-size: 10px; color: #6b7a99; text-transform: uppercase; letter-spacing: 2px; margin-top: 2px; }
 
 .nav { padding: 16px 12px; flex: 1; }
@@ -91,7 +91,7 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 2px;
 }
 .nav-item:hover { background: #252b3a; color: #fff; }
-.nav-item.active { background: rgba(77,144,254,.15); color: #4d90fe; }
+.nav-item.active { background: rgba(36,90,140,.15); color: #245a8c; }
 .nav-item .ico { width: 18px; text-align: center; font-size: 16px; }
 .nav-badge {
   margin-left: auto;
@@ -120,9 +120,10 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   min-height: 100vh;
 }
+
 .topbar {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
+  background: #232839;
+  border-bottom: 1px solid #2e3448;
   padding: 14px 28px;
   display: flex;
   align-items: center;
@@ -130,12 +131,13 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
 .topbar-title {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 20px;
+  color: #fff;
 }
 .topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
 
@@ -294,7 +296,7 @@ a { color: inherit; text-decoration: none; }
 .vehicle-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(26,86,219,.12);
+  box-shadow: 0 6px 20px rgba(36,90,140,.12);
 }
 .card-header {
   padding: 16px 16px 12px;
@@ -581,8 +583,8 @@ textarea { resize: vertical; min-height: 70px; }
   justify-content: space-between;
   gap: 8px;
   padding: 5px 9px;
-  background: rgba(26,86,219,.06);
-  border: 1px solid rgba(26,86,219,.2);
+  background: rgba(36,90,140,.06);
+  border: 1px solid rgba(36,90,140,.2);
   border-radius: 6px;
   cursor: default;
 }
@@ -615,7 +617,7 @@ input.has-diff { border-color: var(--accent) !important; }
   transition: all .2s;
   margin-bottom: 20px;
 }
-.pdf-zone:hover, .pdf-zone.drag { border-color: var(--accent); background: rgba(26,86,219,.04); }
+.pdf-zone:hover, .pdf-zone.drag { border-color: var(--accent); background: rgba(36,90,140,.04); }
 .pdf-zone-icon { font-size: 36px; margin-bottom: 8px; }
 .pdf-zone-text { font-size: 14px; font-weight: 500; color: var(--text2); }
 .pdf-zone-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
@@ -729,13 +731,47 @@ input.has-diff { border-color: var(--accent) !important; }
 .page-header p { font-size: 13px; color: var(--text3); margin-top: 2px; }
 
 /* ═══════════════════════════════════════════
+   PAGE HERO (all views)
+═══════════════════════════════════════════ */
+.page-hero {
+  margin: -28px -28px 24px;
+  padding: 28px 36px 26px;
+  background: linear-gradient(to bottom, #1a2a3f 0%, #2e5478 60%, #5e89b1 100%);
+  position: relative;
+  overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.page-hero-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: #fff;
+  letter-spacing: -.5px;
+  position: relative;
+  z-index: 1;
+}
+.page-hero-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,.6);
+  margin-top: 3px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════
    DASHBOARD HERO
 ═══════════════════════════════════════════ */
 .dash-hero {
   position: relative;
   margin: -28px -28px 0;
   height: 220px;
-  background: linear-gradient(135deg, #0f1c3f 0%, #1a3a6e 45%, #1a56db 100%);
+  background: linear-gradient(to bottom, #1a2a3f 0%, #2e5478 60%, #5e89b1 100%);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -759,7 +795,7 @@ input.has-diff { border-color: var(--accent) !important; }
   letter-spacing: -1px;
   margin-bottom: 4px;
 }
-.dash-hero-title span { color: #7eb3ff; }
+.dash-hero-title span { color: #a8c8e8; }
 .dash-hero-sub {
   font-size: 13px;
   color: rgba(255,255,255,.6);
@@ -833,8 +869,8 @@ input.has-diff { border-color: var(--accent) !important; }
   transition: all .15s;
 }
 .day-btn.active, .day-btn:hover {
-  background: rgba(26,86,219,.1);
-  border-color: rgba(26,86,219,.4);
+  background: rgba(36,90,140,.1);
+  border-color: rgba(36,90,140,.4);
   color: var(--accent);
 }
 
@@ -887,16 +923,17 @@ input.has-diff { border-color: var(--accent) !important; }
 /* User chip in topbar */
 .user-chip {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
   border-radius: 20px;
   padding: 5px 12px 5px 8px;
   font-size: 12px;
   cursor: pointer;
   transition: all .15s;
   position: relative;
+  color: #fff;
 }
-.user-chip:hover { border-color: var(--border2); }
+.user-chip:hover { background: rgba(255,255,255,.14); }
 .user-avatar {
   width: 22px; height: 22px;
   background: var(--accent);
@@ -1044,11 +1081,9 @@ input.has-diff { border-color: var(--accent) !important; }
 
     <!-- ═══ VEHICLES ═══ -->
     <div class="view" id="view-vehicles">
-      <div class="page-header">
-        <div>
-          <h1>Transporto priemonės</h1>
-          <p id="vehicle-count-label">Kraunama...</p>
-        </div>
+      <div class="page-hero">
+        <div class="page-hero-title">🚗 Transporto priemonės</div>
+        <div class="page-hero-sub" id="vehicle-count-label">Kraunama...</div>
       </div>
       <div class="toolbar">
         <div class="search-wrap">
@@ -1077,11 +1112,9 @@ input.has-diff { border-color: var(--accent) !important; }
 
     <!-- ═══ REMINDERS ═══ -->
     <div class="view" id="view-reminders">
-      <div class="page-header">
-        <div>
-          <h1>Priminimai</h1>
-          <p>Artėjantys ir pasibaigę galiojimo terminai</p>
-        </div>
+      <div class="page-hero">
+        <div class="page-hero-title">🔔 Priminimai</div>
+        <div class="page-hero-sub">Artėjantys ir pasibaigę galiojimo terminai</div>
       </div>
       <div class="day-filter">
         <button class="day-btn active" onclick="setReminderDays(this,7)">7 dienos</button>
