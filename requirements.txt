@@ -6,3 +6,5 @@ pillow
 pillow-heif
 reportlab
 python-multipart
+python-jose[cryptography]
+passlib[bcrypt]

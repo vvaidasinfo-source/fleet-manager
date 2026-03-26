@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Boolean
 from sqlalchemy.sql import func
 from database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    username        = Column(String(100), unique=True, index=True, nullable=False)
+    full_name       = Column(String(200))
+    hashed_password = Column(String(200), nullable=False)
+    role            = Column(String(20), nullable=False, default="viewer")
+    is_active       = Column(Boolean, default=True)
+    created_at      = Column(DateTime, server_default=func.now())
 
 
 class Vehicle(Base):
@@ -22,12 +34,10 @@ class Vehicle(Base):
     mileage         = Column(Integer)
     notes           = Column(Text)
 
-    # Dates for reminders
     tech_inspection_date = Column(Date)
     insurance_date       = Column(Date)
     oil_change_date      = Column(Date)
-
-    doc_pdf_path = Column(String(500))   # kelias į išsaugotą PDF
+    doc_pdf_path         = Column(String(500))
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

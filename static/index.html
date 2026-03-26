@@ -748,11 +748,112 @@ input.has-diff { border-color: var(--accent) !important; }
   border-color: rgba(245,166,35,.4);
   color: var(--accent);
 }
+
+/* ═══════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════ */
+.login-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius2);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow);
+}
+.login-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.login-logo span { color: var(--accent); }
+.login-sub { text-align: center; font-size: 12px; color: var(--text3); margin-bottom: 28px; }
+.login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.login-error { color: var(--red); font-size: 12px; text-align: center; min-height: 18px; margin-bottom: 8px; }
+.login-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+  margin-top: 4px;
+}
+.login-btn:hover { background: var(--accent2); }
+
+/* User chip in topbar */
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+}
+.user-chip:hover { border-color: var(--border2); }
+.user-avatar {
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #000;
+  flex-shrink: 0;
+}
+.role-badge {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  padding: 1px 6px; border-radius: 10px;
+}
+.role-badge.admin  { background: rgba(239,68,68,.15); color: var(--red); }
+.role-badge.editor { background: rgba(59,130,246,.15); color: var(--blue); }
+.role-badge.viewer { background: rgba(139,141,153,.15); color: var(--text2); }
+
+/* Users modal */
+.users-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.users-table th { padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text3); border-bottom: 1px solid var(--border); }
+.users-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.users-table tr:last-child td { border-bottom: none; }
 </style>
 </head>
 <body>
 
-<div class="layout">
+<!-- ══════════════ LOGIN ══════════════ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">Fleet<span>OS</span></div>
+    <div class="login-sub">Transporto priemonių valdymas</div>
+    <div class="login-field">
+      <label>Vartotojo vardas</label>
+      <input type="text" id="login-username" placeholder="admin" autocomplete="username"/>
+    </div>
+    <div class="login-field">
+      <label>Slaptažodis</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') doLogin()"/>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" onclick="doLogin()" id="login-btn">Prisijungti</button>
+  </div>
+</div>
+
+<div class="layout" id="app-layout" style="display:none">
 
 <!-- ══════════════ SIDEBAR ══════════════ -->
 <aside class="sidebar" id="sidebar">
@@ -772,8 +873,8 @@ input.has-diff { border-color: var(--accent) !important; }
       <span class="nav-badge" id="reminder-badge" style="display:none">0</span>
     </div>
   </nav>
-  <div class="sidebar-footer">
-    FleetOS v1.0 &nbsp;·&nbsp; SQLite
+  <div class="sidebar-footer" id="sidebar-footer">
+    FleetOS v2.0
   </div>
 </aside>
 
@@ -783,9 +884,12 @@ input.has-diff { border-color: var(--accent) !important; }
     <button class="btn btn-ghost btn-icon menu-btn" onclick="toggleSidebar()" style="display:none">☰</button>
     <span class="topbar-title" id="topbar-title">Skydelis</span>
     <div class="topbar-right">
-      <button class="btn btn-primary" onclick="openAddModal()">
-        + Pridėti
-      </button>
+      <button class="btn btn-primary" id="btn-add" onclick="openAddModal()">+ Pridėti</button>
+      <div class="user-chip" id="user-chip" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-name">—</span>
+        <span class="role-badge" id="user-role-badge"></span>
+      </div>
     </div>
   </header>
 
@@ -884,6 +988,69 @@ input.has-diff { border-color: var(--accent) !important; }
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /layout -->
+</div><!-- /app-layout -->
+
+<!-- ══════════════ USERS MODAL ══════════════ -->
+<div class="modal-overlay" id="users-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">👥 Vartotojų valdymas</span>
+      <button class="modal-close" onclick="document.getElementById('users-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="openNewUserForm()">+ Naujas vartotojas</button>
+      </div>
+      <!-- Naujo vartotojo forma -->
+      <div id="new-user-form" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr">
+          <div class="form-group">
+            <label>Vartotojo vardas</label>
+            <input type="text" id="nu-username" placeholder="vardas"/>
+          </div>
+          <div class="form-group">
+            <label>Vardas pavardė</label>
+            <input type="text" id="nu-fullname" placeholder="Vardas Pavardė"/>
+          </div>
+          <div class="form-group">
+            <label>Slaptažodis</label>
+            <input type="password" id="nu-password" placeholder="••••••••"/>
+          </div>
+          <div class="form-group">
+            <label>Rolė</label>
+            <select id="nu-role">
+              <option value="viewer">Žiūruris</option>
+              <option value="editor">Redaktorius</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('new-user-form').style.display='none'">Atšaukti</button>
+          <button class="btn btn-primary btn-sm" onclick="saveNewUser()">💾 Išsaugoti</button>
+        </div>
+      </div>
+      <table class="users-table" id="users-table">
+        <thead><tr><th>Vartotojas</th><th>Vardas</th><th>Rolė</th><th>Būsena</th><th></th></tr></thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('users-modal').classList.remove('open')">Uždaryti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ USER MENU DROPDOWN ══════════════ -->
+<div id="user-menu" style="display:none;position:fixed;top:60px;right:20px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);box-shadow:var(--shadow);z-index:300;min-width:180px;padding:6px">
+  <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <div style="font-weight:600;font-size:13px" id="menu-fullname">—</div>
+    <div style="font-size:11px;color:var(--text3)" id="menu-username">—</div>
+  </div>
+  <button class="nav-item" style="width:100%;margin:0" id="menu-users-btn" onclick="openUsersModal()">👥 Vartotojai</button>
+  <button class="nav-item" style="width:100%;margin:0;color:var(--red)" onclick="doLogout()">⎋ Atsijungti</button>
+</div>
+
 
 <!-- ══════════════ ADD/EDIT MODAL ══════════════ -->
 <div class="modal-overlay" id="vehicle-modal">
@@ -1091,14 +1258,185 @@ function closeSidebar() {
 // ═══════════════════════════════════════════
 const API = '';
 
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+let currentUser = null;
+
+function getToken() { return localStorage.getItem('fleet_token'); }
+function setToken(t) { localStorage.setItem('fleet_token', t); }
+function clearToken() { localStorage.removeItem('fleet_token'); }
+
 async function apiFetch(path, opts = {}) {
+  const token = getToken();
+  if (token) {
+    opts.headers = opts.headers || {};
+    opts.headers['Authorization'] = 'Bearer ' + token;
+  }
   const res = await fetch(API + path, opts);
+  if (res.status === 401) { doLogout(); return; }
   if (!res.ok) {
     const err = await res.text();
     throw new Error(err || `HTTP ${res.status}`);
   }
   if (res.status === 204) return null;
   return res.json();
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  if (!username || !password) { errEl.textContent = 'Įveskite vardą ir slaptažodį'; return; }
+  btn.textContent = 'Jungiamasi...'; btn.disabled = true;
+  errEl.textContent = '';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    if (!res.ok) {
+      const e = await res.json();
+      throw new Error(e.detail || 'Klaida');
+    }
+    const data = await res.json();
+    setToken(data.access_token);
+    currentUser = data.user;
+    showApp();
+  } catch(e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.textContent = 'Prisijungti'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  clearToken();
+  currentUser = null;
+  document.getElementById('app-layout').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('user-menu').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('app-layout').style.display = '';
+  applyRoleUI();
+  loadDashboard();
+  loadVehicles();
+}
+
+function applyRoleUI() {
+  if (!currentUser) return;
+  const role = currentUser.role;
+  const initials = (currentUser.full_name || currentUser.username).substring(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name').textContent = currentUser.full_name || currentUser.username;
+  const rb = document.getElementById('user-role-badge');
+  rb.textContent = role === 'admin' ? 'Admin' : role === 'editor' ? 'Redaktorius' : 'Žiūruris';
+  rb.className = 'role-badge ' + role;
+  document.getElementById('menu-fullname').textContent = currentUser.full_name || currentUser.username;
+  document.getElementById('menu-username').textContent = '@' + currentUser.username;
+
+  // Slėpti mygtuką pridėti žiūruriui
+  const canEdit = role === 'admin' || role === 'editor';
+  document.getElementById('btn-add').style.display = canEdit ? '' : 'none';
+  // Slėpti vartotojų valdymą ne adminui
+  document.getElementById('menu-users-btn').style.display = role === 'admin' ? '' : 'none';
+}
+
+function toggleUserMenu() {
+  const m = document.getElementById('user-menu');
+  m.style.display = m.style.display === 'none' ? '' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#user-chip') && !e.target.closest('#user-menu'))
+    document.getElementById('user-menu').style.display = 'none';
+});
+
+// ── Vartotojų valdymas ────────────────────────────────────────────────────────
+
+async function openUsersModal() {
+  document.getElementById('user-menu').style.display = 'none';
+  document.getElementById('users-modal').classList.add('open');
+  document.getElementById('new-user-form').style.display = 'none';
+  await loadUsers();
+}
+
+async function loadUsers() {
+  try {
+    const users = await apiFetch('/api/users');
+    const tbody = document.getElementById('users-tbody');
+    const roleLabel = r => r === 'admin' ? 'Admin' : r === 'editor' ? 'Redaktorius' : 'Žiūruris';
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.full_name || '—'}</td>
+        <td><span class="role-badge ${u.role}">${roleLabel(u.role)}</span></td>
+        <td style="color:${u.is_active ? 'var(--green)' : 'var(--red)'}">
+          ${u.is_active ? '✓ Aktyvus' : '✗ Išjungtas'}
+        </td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="toggleUserActive(${u.id},${u.is_active})">
+            ${u.is_active ? 'Išjungti' : 'Įjungti'}
+          </button>
+          ${u.id !== currentUser.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id},'${u.username}')">🗑</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    toast('Klaida: ' + e.message, 'error');
+  }
+}
+
+function openNewUserForm() {
+  document.getElementById('new-user-form').style.display = '';
+  document.getElementById('nu-username').focus();
+}
+
+async function saveNewUser() {
+  const username = document.getElementById('nu-username').value.trim();
+  const full_name = document.getElementById('nu-fullname').value.trim();
+  const password = document.getElementById('nu-password').value;
+  const role = document.getElementById('nu-role').value;
+  if (!username || !password) { toast('Vardas ir slaptažodis privalomi', 'error'); return; }
+  try {
+    await apiFetch('/api/users', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username, full_name, password, role})
+    });
+    document.getElementById('new-user-form').style.display = 'none';
+    document.getElementById('nu-username').value = '';
+    document.getElementById('nu-password').value = '';
+    document.getElementById('nu-fullname').value = '';
+    toast('Vartotojas sukurtas ✓', 'success');
+    await loadUsers();
+  } catch(e) { toast('Klaida: ' + e.message, 'error'); }
+}
+
+async function toggleUserActive(id, isActive) {
+  try {
+    await apiFetch(`/api/users/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({is_active: !isActive})
+    });
+    await loadUsers();
+  } catch(e) { toast('Klaida: ' + e.message, 'error'); }
+}
+
+async function deleteUserConfirm(id, username) {
+  if (!confirm(`Ištrinti vartotoją "${username}"?`)) return;
+  try {
+    await apiFetch(`/api/users/${id}`, {method: 'DELETE'});
+    toast('Vartotojas ištrintas ✓', 'success');
+    await loadUsers();
+  } catch(e) { toast('Klaida: ' + e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════
@@ -1647,7 +1985,26 @@ document.getElementById('detail-modal').addEventListener('click', function(e) {
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
-loadDashboard();
+async function init() {
+  const token = getToken();
+  if (token) {
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: {'Authorization': 'Bearer ' + token}
+      });
+      if (res.ok) {
+        currentUser = await res.json();
+        showApp();
+        return;
+      }
+    } catch(e) {}
+    clearToken();
+  }
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('app-layout').style.display = 'none';
+}
+
+init();
 </script>
 </body>
 </html>
