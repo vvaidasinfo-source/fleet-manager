@@ -728,6 +728,92 @@ input.has-diff { border-color: var(--accent) !important; }
 }
 .page-header p { font-size: 13px; color: var(--text3); margin-top: 2px; }
 
+/* ═══════════════════════════════════════════
+   DASHBOARD HERO
+═══════════════════════════════════════════ */
+.dash-hero {
+  position: relative;
+  margin: -28px -28px 0;
+  height: 220px;
+  background: linear-gradient(135deg, #0f1c3f 0%, #1a3a6e 45%, #1a56db 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.dash-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.dash-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 36px;
+  flex: 1;
+}
+.dash-hero-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 36px;
+  color: #fff;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.dash-hero-title span { color: #7eb3ff; }
+.dash-hero-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,.6);
+  margin-bottom: 24px;
+  text-transform: capitalize;
+}
+.dash-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 12px 20px;
+  display: inline-flex;
+  backdrop-filter: blur(8px);
+}
+.dash-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+.dash-hero-stat span {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: #fff;
+  line-height: 1;
+}
+.dash-hero-stat small {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,.5);
+  margin-top: 3px;
+}
+.dash-hero-stat.ok span { color: #4ade80; }
+.dash-hero-stat.warn span { color: #fbbf24; }
+.dash-hero-stat.danger span { color: #f87171; }
+.dash-hero-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,.15);
+}
+.dash-hero-truck {
+  position: absolute;
+  right: -10px;
+  bottom: 0;
+  width: 420px;
+  opacity: .7;
+  pointer-events: none;
+}
+
 /* day filter */
 .day-filter {
   display: flex;
@@ -900,40 +986,60 @@ input.has-diff { border-color: var(--accent) !important; }
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="view active" id="view-dashboard">
-      <div class="page-header">
-        <div>
-          <h1>Skydelis</h1>
-          <p id="dash-date"></p>
+
+      <!-- Hero banner -->
+      <div class="dash-hero">
+        <div class="dash-hero-overlay"></div>
+        <div class="dash-hero-content">
+          <div class="dash-hero-title">Fleet<span>OS</span></div>
+          <div class="dash-hero-sub" id="dash-date"></div>
+          <div class="dash-hero-stats" id="dash-hero-stats">
+            <div class="dash-hero-stat"><span id="hs-total">—</span><small>Transporto</small></div>
+            <div class="dash-hero-divider"></div>
+            <div class="dash-hero-stat ok"><span id="hs-ok">—</span><small>Tvarkoje</small></div>
+            <div class="dash-hero-divider"></div>
+            <div class="dash-hero-stat warn"><span id="hs-warn">—</span><small>Artėja</small></div>
+            <div class="dash-hero-divider"></div>
+            <div class="dash-hero-stat danger"><span id="hs-danger">—</span><small>Pasibaigė</small></div>
+          </div>
         </div>
+        <!-- SVG truck silhouette -->
+        <svg class="dash-hero-truck" viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <!-- Trailer -->
+          <rect x="10" y="60" width="300" height="110" rx="6" fill="white" fill-opacity="0.08"/>
+          <rect x="10" y="60" width="300" height="12" rx="3" fill="white" fill-opacity="0.12"/>
+          <!-- Cab -->
+          <rect x="310" y="80" width="130" height="90" rx="8" fill="white" fill-opacity="0.1"/>
+          <path d="M310 80 L370 40 L440 40 L440 80 Z" fill="white" fill-opacity="0.1"/>
+          <!-- Windshield -->
+          <path d="M318 78 L368 44 L430 44 L430 78 Z" fill="white" fill-opacity="0.15"/>
+          <!-- Wheels -->
+          <circle cx="80" cy="175" r="22" fill="white" fill-opacity="0.12"/>
+          <circle cx="80" cy="175" r="12" fill="white" fill-opacity="0.1"/>
+          <circle cx="200" cy="175" r="22" fill="white" fill-opacity="0.12"/>
+          <circle cx="200" cy="175" r="12" fill="white" fill-opacity="0.1"/>
+          <circle cx="360" cy="175" r="22" fill="white" fill-opacity="0.12"/>
+          <circle cx="360" cy="175" r="12" fill="white" fill-opacity="0.1"/>
+          <circle cx="420" cy="175" r="22" fill="white" fill-opacity="0.12"/>
+          <circle cx="420" cy="175" r="12" fill="white" fill-opacity="0.1"/>
+          <!-- Road lines -->
+          <rect x="0" y="196" width="520" height="4" fill="white" fill-opacity="0.06"/>
+          <rect x="30" y="192" width="60" height="3" rx="1.5" fill="white" fill-opacity="0.1"/>
+          <rect x="140" y="192" width="60" height="3" rx="1.5" fill="white" fill-opacity="0.1"/>
+          <rect x="250" y="192" width="60" height="3" rx="1.5" fill="white" fill-opacity="0.1"/>
+        </svg>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card total">
-          <div class="stat-label">Iš viso transporto</div>
-          <div class="stat-value" id="stat-total">—</div>
+      <div style="padding: 24px 0 0">
+        <div class="page-header">
+          <div>
+            <h1 style="font-size:18px">Artimiausi priminimai</h1>
+            <p>Kiti 30 dienų įvykiai</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="navigate('reminders')">Visi →</button>
         </div>
-        <div class="stat-card ok">
-          <div class="stat-label">Tvarkoje</div>
-          <div class="stat-value" id="stat-ok">—</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="stat-label">Artėja galiojimas</div>
-          <div class="stat-value" id="stat-warn">—</div>
-        </div>
-        <div class="stat-card danger">
-          <div class="stat-label">Pasibaigė</div>
-          <div class="stat-value" id="stat-danger">—</div>
-        </div>
+        <div id="dash-reminders" class="reminders-list"></div>
       </div>
-
-      <div class="page-header">
-        <div>
-          <h1 style="font-size:18px">Artimiausi priminimai</h1>
-          <p>Kiti 30 dienų įvykiai</p>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="navigate('reminders')">Visi →</button>
-      </div>
-      <div id="dash-reminders" class="reminders-list"></div>
     </div>
 
     <!-- ═══ VEHICLES ═══ -->
@@ -1464,10 +1570,10 @@ async function loadDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('lt-LT', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   try {
     const stats = await apiFetch('/api/stats');
-    document.getElementById('stat-total').textContent = stats.total;
-    document.getElementById('stat-ok').textContent = stats.ok;
-    document.getElementById('stat-warn').textContent = stats.upcoming_30;
-    document.getElementById('stat-danger').textContent = stats.expired;
+    document.getElementById('hs-total').textContent = stats.total;
+    document.getElementById('hs-ok').textContent = stats.ok;
+    document.getElementById('hs-warn').textContent = stats.upcoming_30;
+    document.getElementById('hs-danger').textContent = stats.expired;
 
     const rem = await apiFetch('/api/reminders?days=30');
     renderReminderList(rem, 'dash-reminders', 5);
