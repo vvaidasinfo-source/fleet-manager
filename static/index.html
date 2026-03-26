@@ -1380,7 +1380,8 @@ async function loadUsers() {
         <td style="color:${u.is_active ? 'var(--green)' : 'var(--red)'}">
           ${u.is_active ? '✓ Aktyvus' : '✗ Išjungtas'}
         </td>
-        <td style="display:flex;gap:6px">
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="changePassword(${u.id},'${u.username}')">🔑</button>
           <button class="btn btn-ghost btn-sm" onclick="toggleUserActive(${u.id},${u.is_active})">
             ${u.is_active ? 'Išjungti' : 'Įjungti'}
           </button>
@@ -1391,6 +1392,20 @@ async function loadUsers() {
   } catch(e) {
     toast('Klaida: ' + e.message, 'error');
   }
+}
+
+async function changePassword(id, username) {
+  const newPass = prompt(`Naujas slaptažodis vartotojui "${username}":`);
+  if (!newPass) return;
+  if (newPass.length < 4) { toast('Slaptažodis per trumpas (min. 4 simboliai)', 'error'); return; }
+  try {
+    await apiFetch(`/api/users/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: newPass})
+    });
+    toast(`Slaptažodis pakeistas ✓`, 'success');
+  } catch(e) { toast('Klaida: ' + e.message, 'error'); }
 }
 
 function openNewUserForm() {
