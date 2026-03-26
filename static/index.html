@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FleetOS — Transporto priemonių valdymas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:       #0d0e11;
+  --bg2:      #141518;
+  --bg3:      #1c1d22;
+  --border:   #2a2b31;
+  --border2:  #35363e;
+  --text:     #e8e9ef;
+  --text2:    #8b8d99;
+  --text3:    #565760;
+  --accent:   #f5a623;
+  --accent2:  #e8941a;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --yellow:   #eab308;
+  --blue:     #3b82f6;
+  --radius:   10px;
+  --radius2:  16px;
+  --shadow:   0 4px 24px rgba(0,0,0,.4);
+}
+
+/* ═══════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.layout { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 240px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform .3s;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -.5px;
+  color: #fff;
+}
+.logo-mark span { color: var(--accent); }
+.logo-sub { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 2px; margin-top: 2px; }
+
+.nav { padding: 16px 12px; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(245,166,35,.12); color: var(--accent); }
+.nav-item .ico { width: 18px; text-align: center; font-size: 16px; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* MAIN */
+.main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+}
+.topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+.content { padding: 28px; flex: 1; }
+
+/* ═══════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════ */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ═══════════════════════════════════════════
+   STATS CARDS
+═══════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.stat-card.total::before { background: var(--accent); }
+.stat-card.ok::before { background: var(--green); }
+.stat-card.warn::before { background: var(--yellow); }
+.stat-card.danger::before { background: var(--red); }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; line-height: 1; }
+.stat-card.total .stat-value { color: var(--accent); }
+.stat-card.ok .stat-value { color: var(--green); }
+.stat-card.warn .stat-value { color: var(--yellow); }
+.stat-card.danger .stat-value { color: var(--red); }
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+.btn-danger {
+  background: rgba(239,68,68,.12);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,.2);
+}
+.btn-danger:hover { background: rgba(239,68,68,.2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 8px; }
+
+/* ═══════════════════════════════════════════
+   SEARCH / TOOLBAR
+═══════════════════════════════════════════ */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+.search-wrap::before {
+  content: '⌕';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 18px;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px 8px 38px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text3); }
+
+.view-toggle {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.view-toggle button {
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 14px;
+  transition: all .15s;
+}
+.view-toggle button.active { background: var(--bg3); color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   CARDS GRID
+═══════════════════════════════════════════ */
+.vehicles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.vehicle-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+  cursor: pointer;
+}
+.vehicle-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+.card-header {
+  padding: 16px 16px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-plate {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 1px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: var(--accent);
+}
+.card-make-model {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+}
+.card-year {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+  text-align: right;
+}
+.card-body {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.card-info-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.card-chip {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text2);
+}
+.card-alerts {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alert-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.alert-row.expired { color: var(--red); }
+.alert-row.soon { color: var(--yellow); }
+.alert-row.ok { color: var(--green); }
+.card-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ═══════════════════════════════════════════
+   TABLE VIEW
+═══════════════════════════════════════════ */
+.table-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text3);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+  cursor: pointer;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg3); }
+tbody td {
+  padding: 12px 14px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.plate-cell {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: .5px;
+}
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.dot-red { background: var(--red); }
+.dot-yellow { background: var(--yellow); }
+.dot-green { background: var(--green); }
+.dot-gray { background: var(--text3); }
+.table-actions { display: flex; gap: 6px; }
+
+/* ═══════════════════════════════════════════
+   REMINDERS
+═══════════════════════════════════════════ */
+.reminders-list { display: flex; flex-direction: column; gap: 10px; }
+.reminder-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.reminder-card.expired { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.05); }
+.reminder-card.soon { border-color: rgba(234,179,8,.3); background: rgba(234,179,8,.04); }
+.rem-icon { font-size: 22px; flex-shrink: 0; }
+.rem-info { flex: 1; }
+.rem-plate {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+}
+.rem-label { font-size: 13px; color: var(--text); margin-top: 1px; }
+.rem-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.rem-days {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 60px;
+}
+.rem-days.expired { color: var(--red); }
+.rem-days.soon { color: var(--yellow); }
+.rem-days-label { font-size: 10px; font-weight: 400; color: var(--text3); }
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius2);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+}
+.modal-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.modal-close:hover { background: var(--bg3); color: var(--text); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ═══════════════════════════════════════════
+   FORM
+═══════════════════════════════════════════ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text3);
+  font-weight: 600;
+}
+input[type="text"], input[type="number"], input[type="date"],
+select, textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--text3); }
+select option { background: var(--bg3); }
+textarea { resize: vertical; min-height: 70px; }
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 700;
+  margin: 16px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  grid-column: 1 / -1;
+}
+
+/* PDF inline diff hints */
+.field-hint {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 9px;
+  background: rgba(245,166,35,.07);
+  border: 1px solid rgba(245,166,35,.22);
+  border-radius: 6px;
+  cursor: default;
+}
+.field-hint-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-hint-text strong { font-weight: 600; }
+.field-hint-apply {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.field-hint-apply:hover { background: var(--accent2); }
+input.has-diff { border-color: var(--accent) !important; }
+
+.pdf-diff { display: none; }
+
+
+.pdf-zone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius2);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 20px;
+}
+.pdf-zone:hover, .pdf-zone.drag { border-color: var(--accent); background: rgba(245,166,35,.04); }
+.pdf-zone-icon { font-size: 36px; margin-bottom: 8px; }
+.pdf-zone-text { font-size: 14px; font-weight: 500; color: var(--text2); }
+.pdf-zone-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+#pdf-file { display: none; }
+.pdf-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  color: var(--accent);
+  font-size: 13px;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  animation: toastIn .2s ease;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--blue); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text3);
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; color: var(--text2); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; }
+
+/* ═══════════════════════════════════════════
+   DETAIL VIEW
+═══════════════════════════════════════════ */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.detail-item { }
+.detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--text3); margin-bottom: 3px; }
+.detail-value { font-size: 14px; color: var(--text); }
+.detail-value.big { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--accent); }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .form-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .menu-btn { display: flex !important; }
+}
+.menu-btn { display: none; }
+
+/* ═══════════════════════════════════════════
+   PAGE HEADER
+═══════════════════════════════════════════ */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.page-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+}
+.page-header p { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+/* day filter */
+.day-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.day-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+.day-btn.active, .day-btn:hover {
+  background: rgba(245,166,35,.12);
+  border-color: rgba(245,166,35,.4);
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">Fleet<span>OS</span></div>
+    <div class="logo-sub">Transporto valdymas</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+      <span class="ico">◈</span> Skydelis
+    </div>
+    <div class="nav-item" onclick="navigate('vehicles')" id="nav-vehicles">
+      <span class="ico">🚗</span> Transportas
+    </div>
+    <div class="nav-item" onclick="navigate('reminders')" id="nav-reminders">
+      <span class="ico">🔔</span> Priminimai
+      <span class="nav-badge" id="reminder-badge" style="display:none">0</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    FleetOS v1.0 &nbsp;·&nbsp; SQLite
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="main">
+  <header class="topbar">
+    <button class="btn btn-ghost btn-icon menu-btn" onclick="toggleSidebar()" style="display:none">☰</button>
+    <span class="topbar-title" id="topbar-title">Skydelis</span>
+    <div class="topbar-right">
+      <button class="btn btn-primary" onclick="openAddModal()">
+        + Pridėti
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <h1>Skydelis</h1>
+          <p id="dash-date"></p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card total">
+          <div class="stat-label">Iš viso transporto</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card ok">
+          <div class="stat-label">Tvarkoje</div>
+          <div class="stat-value" id="stat-ok">—</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Artėja galiojimas</div>
+          <div class="stat-value" id="stat-warn">—</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">Pasibaigė</div>
+          <div class="stat-value" id="stat-danger">—</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <div>
+          <h1 style="font-size:18px">Artimiausi priminimai</h1>
+          <p>Kiti 30 dienų įvykiai</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('reminders')">Visi →</button>
+      </div>
+      <div id="dash-reminders" class="reminders-list"></div>
+    </div>
+
+    <!-- ═══ VEHICLES ═══ -->
+    <div class="view" id="view-vehicles">
+      <div class="page-header">
+        <div>
+          <h1>Transporto priemonės</h1>
+          <p id="vehicle-count-label">Kraunama...</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input class="search-input" id="search" placeholder="Valst. nr, markė, modelis, VIN..." oninput="handleSearch(this.value)"/>
+        </div>
+        <div class="view-toggle">
+          <button id="btn-grid" onclick="setLayout('grid')" title="Kortelės">⊞</button>
+          <button class="active" id="btn-list" onclick="setLayout('list')" title="Sąrašas">≡</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadVehicles()">↻ Atnaujinti</button>
+      </div>
+      <div id="vehicles-grid" class="vehicles-grid" style="display:none"></div>
+      <div id="vehicles-table-wrap" class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Valst. nr</th><th>Markė / Modelis</th><th>Metai</th>
+              <th>VIN</th><th>Kuras</th><th>Tech. apž.</th>
+              <th>Draudimas</th><th>Tepalo k.</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="vehicles-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ REMINDERS ═══ -->
+    <div class="view" id="view-reminders">
+      <div class="page-header">
+        <div>
+          <h1>Priminimai</h1>
+          <p>Artėjantys ir pasibaigę galiojimo terminai</p>
+        </div>
+      </div>
+      <div class="day-filter">
+        <button class="day-btn active" onclick="setReminderDays(this,7)">7 dienos</button>
+        <button class="day-btn" onclick="setReminderDays(this,14)">14 dienų</button>
+        <button class="day-btn" onclick="setReminderDays(this,30)">30 dienų</button>
+        <button class="day-btn" onclick="setReminderDays(this,60)">60 dienų</button>
+        <button class="day-btn" onclick="setReminderDays(this,90)">90 dienų</button>
+        <button class="day-btn" onclick="setReminderDays(this,365)">Visi pasibaigę</button>
+      </div>
+      <div id="reminders-list" class="reminders-list"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ══════════════ ADD/EDIT MODAL ══════════════ -->
+<div class="modal-overlay" id="vehicle-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Nauja transporto priemonė</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- PDF Upload -->
+      <div id="pdf-section">
+        <div class="pdf-zone" id="pdf-zone" onclick="document.getElementById('pdf-file').click()" ondragover="pdfDrag(event)" ondrop="pdfDrop(event)" ondragleave="document.getElementById('pdf-zone').classList.remove('drag')">
+          <div class="pdf-zone-icon">📄</div>
+          <div class="pdf-zone-text">Įkelkite registracijos liudijimą (PDF, JPG, PNG, HEIC)</div>
+          <div class="pdf-zone-sub">Duomenys bus automatiškai užpildyti · arba užpildykite rankiniu būdu</div>
+        </div>
+        <input type="file" id="pdf-file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" onchange="handlePdfFile(this.files[0])"/>
+        <div class="pdf-loading" id="pdf-loading">
+          <div class="spinner"></div> Analizuojamas failas, prašome palaukti...
+        </div>
+        <!-- Diff panel -->
+        <div class="pdf-diff" id="pdf-diff">
+          <div class="pdf-diff-header">
+            <span class="pdf-diff-title">📋 Nuskaityti duomenys</span>
+            <div class="pdf-diff-actions">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyPdfFields('empty')">Užpildyti tuščius</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="applyPdfFields('all')">Pakeisti visus</button>
+            </div>
+          </div>
+          <table class="diff-table">
+            <thead><tr><th>Laukas</th><th>Dabartinė reikšmė</th><th>Nuskaitytas dokumentas</th><th></th></tr></thead>
+            <tbody id="diff-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form id="vehicle-form" onsubmit="submitVehicle(event)">
+        <input type="hidden" id="edit-id"/>
+        <input type="hidden" id="f-pdf-path"/>
+        <div class="form-grid">
+          <div class="section-title">Pagrindiniai duomenys</div>
+
+          <div class="form-group">
+            <label>Valstybinis numeris *</label>
+            <input type="text" id="f-plate" placeholder="AAA000" required/>
+          </div>
+          <div class="form-group">
+            <label>VIN kodas</label>
+            <input type="text" id="f-vin" placeholder="17 simbolių"/>
+          </div>
+          <div class="form-group">
+            <label>Markė</label>
+            <input type="text" id="f-make" placeholder="Toyota"/>
+          </div>
+          <div class="form-group">
+            <label>Modelis</label>
+            <input type="text" id="f-model" placeholder="Corolla"/>
+          </div>
+          <div class="form-group">
+            <label>Metai</label>
+            <input type="number" id="f-year" placeholder="2020" min="1900" max="2099"/>
+          </div>
+          <div class="form-group">
+            <label>Spalva</label>
+            <input type="text" id="f-color" placeholder="Juoda"/>
+          </div>
+          <div class="form-group">
+            <label>Variklis</label>
+            <input type="text" id="f-engine" placeholder="2.0 TDI 110kW"/>
+          </div>
+          <div class="form-group">
+            <label>Kuro tipas</label>
+            <select id="f-fuel">
+              <option value="">— pasirinkti —</option>
+              <option>Dyzelinas</option>
+              <option>Benzinas</option>
+              <option>Elektra</option>
+              <option>Hibridas</option>
+              <option>Dujos</option>
+              <option>Kita</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Kėbulo tipas</label>
+            <select id="f-body">
+              <option value="">— pasirinkti —</option>
+              <option>Sedanas</option>
+              <option>Universalas</option>
+              <option>Hečbekas</option>
+              <option>Visureigis</option>
+              <option>Krovininis</option>
+              <option>Mikroautobusas</option>
+              <option>Kita</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sėdimų vietų sk.</label>
+            <input type="number" id="f-seats" placeholder="5" min="1" max="100"/>
+          </div>
+
+          <div class="section-title">Savininkas</div>
+          <div class="form-group full">
+            <label>Savininko vardas / įmonė</label>
+            <input type="text" id="f-owner" placeholder="UAB Įmonė"/>
+          </div>
+          <div class="form-group full">
+            <label>Adresas</label>
+            <textarea id="f-address" placeholder="Gatvė 1, Miestas"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Rida (km)</label>
+            <input type="number" id="f-mileage" placeholder="150000"/>
+          </div>
+
+          <div class="section-title">Priminimai / terminai</div>
+          <div class="form-group">
+            <label>🔧 Techninė apžiūra iki</label>
+            <input type="date" id="f-tech"/>
+          </div>
+          <div class="form-group">
+            <label>🛡️ Draudimas galioja iki</label>
+            <input type="date" id="f-insurance"/>
+          </div>
+          <div class="form-group">
+            <label>🛢️ Tepalo keitimas iki</label>
+            <input type="date" id="f-oil"/>
+          </div>
+
+          <div class="section-title">Pastabos</div>
+          <div class="form-group full">
+            <label>Pastabos</label>
+            <textarea id="f-notes" placeholder="Papildoma informacija..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Atšaukti</button>
+      <button class="btn btn-primary" onclick="submitVehicle(event)">
+        <span id="save-btn-text">💾 Išsaugoti</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DETAIL MODAL ══════════════ -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-title">Transporto priemonė</span>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="detail-pdf-btn" style="display:none;margin-right:auto" onclick="openVehiclePdf()">📄 Reg. liudijimas</button>
+      <button class="btn btn-danger" id="detail-delete-btn">🗑 Ištrinti</button>
+      <button class="btn btn-ghost" onclick="closeDetailModal()">Uždaryti</button>
+      <button class="btn btn-primary" id="detail-edit-btn">✏️ Redaguoti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let vehicles = [];
+let currentLayout = 'list';
+let currentView = 'dashboard';
+let searchQuery = '';
+let reminderDays = 7;
+let editingId = null;
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function navigate(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.getElementById('nav-' + view).classList.add('active');
+  const titles = { dashboard: 'Skydelis', vehicles: 'Transportas', reminders: 'Priminimai' };
+  document.getElementById('topbar-title').textContent = titles[view] || view;
+  currentView = view;
+  if (view === 'vehicles') loadVehicles();
+  if (view === 'reminders') loadReminders(reminderDays);
+  if (view === 'dashboard') loadDashboard();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════
+const API = '';
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, opts);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function loadDashboard() {
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('lt-LT', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  try {
+    const stats = await apiFetch('/api/stats');
+    document.getElementById('stat-total').textContent = stats.total;
+    document.getElementById('stat-ok').textContent = stats.ok;
+    document.getElementById('stat-warn').textContent = stats.upcoming_30;
+    document.getElementById('stat-danger').textContent = stats.expired;
+
+    const rem = await apiFetch('/api/reminders?days=30');
+    renderReminderList(rem, 'dash-reminders', 5);
+    updateBadge(rem);
+  } catch(e) {
+    toast('Klaida kraunant skydelį: ' + e.message, 'error');
+  }
+}
+
+function updateBadge(reminders) {
+  const urgent = reminders.filter(r => r.days_left <= 30);
+  const badge = document.getElementById('reminder-badge');
+  if (urgent.length > 0) {
+    badge.textContent = urgent.length;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// VEHICLES
+// ═══════════════════════════════════════════
+async function loadVehicles() {
+  const qs = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+  try {
+    vehicles = await apiFetch('/api/vehicles' + qs);
+    document.getElementById('vehicle-count-label').textContent = `${vehicles.length} transporto priemonė(-ių) sistemoje`;
+    renderVehicles();
+  } catch(e) {
+    toast('Klaida kraunant duomenis: ' + e.message, 'error');
+  }
+}
+
+let searchTimer;
+function handleSearch(val) {
+  searchQuery = val;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadVehicles, 350);
+}
+
+function setLayout(mode) {
+  currentLayout = mode;
+  document.getElementById('vehicles-grid').style.display = mode === 'grid' ? '' : 'none';
+  document.getElementById('vehicles-table-wrap').style.display = mode === 'list' ? '' : 'none';
+  document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
+  document.getElementById('btn-list').classList.toggle('active', mode === 'list');
+  renderVehicles();
+}
+
+function renderVehicles() {
+  if (currentLayout === 'grid') renderGrid();
+  else renderTable();
+}
+
+function dateStatus(dateStr) {
+  if (!dateStr) return { cls: '', label: '—' };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return { cls: 'expired', label: `Baigėsi ${Math.abs(diff)}d.` };
+  if (diff <= 30) return { cls: 'soon', label: `Liko ${diff}d.` };
+  return { cls: 'ok', label: d.toLocaleDateString('lt-LT') };
+}
+
+function renderGrid() {
+  const el = document.getElementById('vehicles-grid');
+  if (!vehicles.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🚗</div><h3>Nėra transporto priemonių</h3><p>Spauskite "+ Pridėti" arba įkelkite registracijos liudijimo PDF</p></div>`;
+    return;
+  }
+  el.innerHTML = vehicles.map(v => {
+    const tech = dateStatus(v.tech_inspection_date);
+    const ins = dateStatus(v.insurance_date);
+    const oil = dateStatus(v.oil_change_date);
+    const hasAlerts = v.tech_inspection_date || v.insurance_date || v.oil_change_date;
+    return `
+    <div class="vehicle-card" onclick="openDetail(${v.id})">
+      <div class="card-header">
+        <div class="card-plate">${v.plate || '—'}</div>
+        <div>
+          <div class="card-make-model">${[v.make,v.model].filter(Boolean).join(' ') || '—'}</div>
+          <div class="card-year">${v.year || ''} ${v.color || ''}</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-info-row">
+          ${v.fuel_type ? `<span class="card-chip">${v.fuel_type}</span>` : ''}
+          ${v.engine ? `<span class="card-chip">${v.engine}</span>` : ''}
+          ${v.body_type ? `<span class="card-chip">${v.body_type}</span>` : ''}
+          ${v.mileage ? `<span class="card-chip">${v.mileage.toLocaleString()} km</span>` : ''}
+        </div>
+        ${v.owner_name ? `<div style="font-size:12px;color:var(--text3);margin-top:4px">👤 ${v.owner_name}</div>` : ''}
+      </div>
+      ${hasAlerts ? `
+      <div class="card-alerts">
+        ${v.tech_inspection_date ? `<div class="alert-row ${tech.cls}">🔧 Tech. apž. — ${tech.label}</div>` : ''}
+        ${v.insurance_date ? `<div class="alert-row ${ins.cls}">🛡️ Draudimas — ${ins.label}</div>` : ''}
+        ${v.oil_change_date ? `<div class="alert-row ${oil.cls}">🛢️ Tepalo k. — ${oil.label}</div>` : ''}
+      </div>` : ''}
+      <div class="card-footer" onclick="event.stopPropagation()">
+        ${v.doc_pdf_path ? `<button class="btn btn-ghost btn-sm" title="Reg. liudijimas" onclick="window.open('/api/vehicles/${v.id}/pdf','_blank')">📄</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openEdit(${v.id})">✏️ Redaguoti</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete(${v.id},'${v.plate}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('vehicles-tbody');
+  if (!vehicles.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">Nėra duomenų</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = vehicles.map(v => {
+    const tech = dateStatus(v.tech_inspection_date);
+    const ins = dateStatus(v.insurance_date);
+    const oil = dateStatus(v.oil_change_date);
+    const dot = cls => `<span class="status-dot dot-${cls === 'expired' ? 'red' : cls === 'soon' ? 'yellow' : cls === 'ok' ? 'green' : 'gray'}"></span>`;
+    return `
+    <tr onclick="openDetail(${v.id})">
+      <td class="plate-cell">${v.plate}</td>
+      <td>${[v.make,v.model].filter(Boolean).join(' ') || '—'}</td>
+      <td>${v.year || '—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${v.vin ? v.vin.substring(0,12)+'…' : '—'}</td>
+      <td>${v.fuel_type || '—'}</td>
+      <td>${dot(tech.cls)}${tech.label}</td>
+      <td>${dot(ins.cls)}${ins.label}</td>
+      <td>${dot(oil.cls)}${oil.label}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="table-actions">
+          ${v.doc_pdf_path ? `<button class="btn btn-ghost btn-sm" title="Reg. liudijimas" onclick="window.open('/api/vehicles/${v.id}/pdf','_blank')">📄</button>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${v.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete(${v.id},'${v.plate}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// REMINDERS
+// ═══════════════════════════════════════════
+async function loadReminders(days) {
+  try {
+    const rem = await apiFetch(`/api/reminders?days=${days}`);
+    renderReminderList(rem, 'reminders-list');
+    updateBadge(rem);
+  } catch(e) {
+    toast('Klaida kraunant priminimus: ' + e.message, 'error');
+  }
+}
+
+function setReminderDays(btn, days) {
+  reminderDays = days;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadReminders(days);
+}
+
+function renderReminderList(reminders, containerId, limit) {
+  const el = document.getElementById(containerId);
+  const list = limit ? reminders.slice(0, limit) : reminders;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><h3>Viskas tvarkoje</h3><p>Artimiausiuose ${reminderDays} dienų nėra artėjančių terminų</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(r => {
+    const cls = r.expired ? 'expired' : r.days_left <= 7 ? 'soon' : '';
+    const daysText = r.expired
+      ? `<div class="rem-days expired">${Math.abs(r.days_left)}<div class="rem-days-label">dienos praėjo</div></div>`
+      : `<div class="rem-days ${r.days_left <= 14 ? 'soon' : ''}">${r.days_left}<div class="rem-days-label">dienų liko</div></div>`;
+    return `
+    <div class="reminder-card ${cls}" onclick="openDetail(${r.vehicle_id})">
+      <div class="rem-icon">${r.icon}</div>
+      <div class="rem-info">
+        <div class="rem-plate">${r.plate}</div>
+        <div class="rem-label">${r.make || ''} ${r.type}</div>
+        <div class="rem-date">${new Date(r.date).toLocaleDateString('lt-LT')}</div>
+      </div>
+      ${daysText}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════
+function openDetail(id) {
+  const v = vehicles.find(x => x.id === id);
+  if (!v) { apiFetch('/api/vehicles/'+id).then(vv => showDetail(vv)); return; }
+  showDetail(v);
+}
+
+function showDetail(v) {
+  document.getElementById('detail-title').textContent = `${v.plate} — ${[v.make,v.model].filter(Boolean).join(' ') || 'Transporto priemonė'}`;
+  const tech = dateStatus(v.tech_inspection_date);
+  const ins = dateStatus(v.insurance_date);
+  const oil = dateStatus(v.oil_change_date);
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Valst. numeris</div><div class="detail-value big">${v.plate}</div></div>
+      <div class="detail-item"><div class="detail-label">VIN</div><div class="detail-value" style="font-size:12px;word-break:break-all">${v.vin || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Markė</div><div class="detail-value">${v.make || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Modelis</div><div class="detail-value">${v.model || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Metai</div><div class="detail-value">${v.year || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Spalva</div><div class="detail-value">${v.color || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Variklis</div><div class="detail-value">${v.engine || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Kuras</div><div class="detail-value">${v.fuel_type || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Kėbulas</div><div class="detail-value">${v.body_type || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Vietos</div><div class="detail-value">${v.seats || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Savininkas</div><div class="detail-value">${v.owner_name || '—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Rida</div><div class="detail-value">${v.mileage ? v.mileage.toLocaleString()+' km' : '—'}</div></div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div class="alert-row ${tech.cls}" style="font-size:13px">🔧 <strong>Techninė apžiūra:</strong>&nbsp; ${v.tech_inspection_date ? new Date(v.tech_inspection_date).toLocaleDateString('lt-LT') + ' — ' + tech.label : '—'}</div>
+      <div class="alert-row ${ins.cls}" style="font-size:13px">🛡️ <strong>Draudimas:</strong>&nbsp; ${v.insurance_date ? new Date(v.insurance_date).toLocaleDateString('lt-LT') + ' — ' + ins.label : '—'}</div>
+      <div class="alert-row ${oil.cls}" style="font-size:13px">🛢️ <strong>Tepalo keitimas:</strong>&nbsp; ${v.oil_change_date ? new Date(v.oil_change_date).toLocaleDateString('lt-LT') + ' — ' + oil.label : '—'}</div>
+    </div>
+    ${v.notes ? `<div style="margin-top:14px;font-size:13px;color:var(--text2)"><strong>Pastabos:</strong> ${v.notes}</div>` : ''}
+  `;
+  document.getElementById('detail-edit-btn').onclick = () => { closeDetailModal(); openEdit(v.id); };
+  document.getElementById('detail-delete-btn').onclick = () => { closeDetailModal(); confirmDelete(v.id, v.plate); };
+
+  // PDF mygtukas
+  const pdfBtn = document.getElementById('detail-pdf-btn');
+  if (v.doc_pdf_path) {
+    pdfBtn.style.display = '';
+    pdfBtn._vehicleId = v.id;
+  } else {
+    pdfBtn.style.display = 'none';
+  }
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function openVehiclePdf() {
+  const btn = document.getElementById('detail-pdf-btn');
+  const id = btn._vehicleId;
+  if (id) window.open(`/api/vehicles/${id}/pdf`, '_blank');
+}
+
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+// ADD / EDIT
+// ═══════════════════════════════════════════
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Nauja transporto priemonė';
+  document.getElementById('save-btn-text').textContent = '💾 Išsaugoti';
+  document.getElementById('pdf-section').style.display = '';
+  resetForm();
+  document.getElementById('vehicle-modal').classList.add('open');
+}
+
+function openEdit(id) {
+  const v = vehicles.find(x => x.id === id);
+  if (!v) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = `Redaguoti — ${v.plate}`;
+  document.getElementById('save-btn-text').textContent = '💾 Išsaugoti pakeitimus';
+  document.getElementById('pdf-section').style.display = '';
+  fillForm(v);
+  document.getElementById('vehicle-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('vehicle-modal').classList.remove('open');
+  editingId = null;
+}
+
+function resetForm() {
+  ['plate','vin','make','model','year','color','engine','fuel','body','seats','owner','address','mileage','tech','insurance','oil','notes'].forEach(id => {
+    const el = document.getElementById('f-'+id);
+    if (el) el.value = '';
+  });
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-pdf-path').value = '';
+  clearDiffHints();
+}
+
+function fillForm(v) {
+  const set = (id, val) => { const el = document.getElementById('f-'+id); if(el) el.value = val || ''; };
+  set('plate', v.plate); set('vin', v.vin); set('make', v.make); set('model', v.model);
+  set('year', v.year); set('color', v.color); set('engine', v.engine); set('fuel', v.fuel_type);
+  set('body', v.body_type); set('seats', v.seats); set('owner', v.owner_name);
+  set('address', v.owner_address); set('mileage', v.mileage); set('notes', v.notes);
+  set('tech', v.tech_inspection_date); set('insurance', v.insurance_date); set('oil', v.oil_change_date);
+  document.getElementById('edit-id').value = v.id;
+  document.getElementById('f-pdf-path').value = v.doc_pdf_path || '';
+  clearDiffHints();
+}
+
+function collectForm() {
+  const g = id => { const el = document.getElementById('f-'+id); return el ? el.value.trim() || null : null; };
+  return {
+    plate: g('plate'), vin: g('vin'), make: g('make'), model: g('model'),
+    year: g('year') ? parseInt(g('year')) : null, color: g('color'),
+    engine: g('engine'), fuel_type: g('fuel'), body_type: g('body'),
+    seats: g('seats') ? parseInt(g('seats')) : null, owner_name: g('owner'),
+    owner_address: g('address'), mileage: g('mileage') ? parseInt(g('mileage')) : null,
+    notes: g('notes'), tech_inspection_date: g('tech'),
+    insurance_date: g('insurance'), oil_change_date: g('oil'),
+    doc_pdf_path: g('pdf-path'),
+  };
+}
+
+async function submitVehicle(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const data = collectForm();
+  if (!data.plate) { toast('Valstybinis numeris yra privalomas', 'error'); return; }
+  try {
+    if (editingId) {
+      await apiFetch(`/api/vehicles/${editingId}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+      toast('Transporto priemonė atnaujinta ✓', 'success');
+    } else {
+      await apiFetch('/api/vehicles', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+      toast('Transporto priemonė pridėta ✓', 'success');
+    }
+    closeModal();
+    await loadVehicles();
+    await loadDashboard();
+  } catch(e) {
+    toast('Klaida: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// DELETE
+// ═══════════════════════════════════════════
+function confirmDelete(id, plate) {
+  if (confirm(`Ar tikrai norite ištrinti ${plate}?\nŠis veiksmas negrįžtamas.`)) {
+    deleteVehicle(id, plate);
+  }
+}
+
+async function deleteVehicle(id, plate) {
+  try {
+    await apiFetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+    toast(`${plate} ištrinta ✓`, 'success');
+    await loadVehicles();
+    await loadDashboard();
+  } catch(e) {
+    toast('Klaida trinant: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// PDF UPLOAD
+// ═══════════════════════════════════════════
+function pdfDrag(e) {
+  e.preventDefault();
+  document.getElementById('pdf-zone').classList.add('drag');
+}
+
+function pdfDrop(e) {
+  e.preventDefault();
+  document.getElementById('pdf-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  const allowed = ['application/pdf','image/jpeg','image/jpg','image/png','image/heic','image/heif'];
+  const ext = file?.name?.split('.').pop().toLowerCase();
+  const allowedExts = ['pdf','jpg','jpeg','png','heic','heif'];
+  if (file && (allowed.includes(file.type) || allowedExts.includes(ext))) handlePdfFile(file);
+  else toast('Prašome įkelti PDF, JPG, PNG arba HEIC failą', 'error');
+}
+
+async function handlePdfFile(file) {
+  if (!file) return;
+  const loading = document.getElementById('pdf-loading');
+  const zone = document.getElementById('pdf-zone');
+  zone.style.display = 'none';
+  loading.style.display = 'flex';
+  document.getElementById('pdf-diff').style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/extract-pdf', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    // Išsaugome PDF kelią
+    if (data.pdf_path) {
+      document.getElementById('f-pdf-path').value = data.pdf_path;
+    }
+
+    showPdfDiff(data);
+  } catch(e) {
+    toast('Klaida: ' + e.message, 'error');
+  } finally {
+    loading.style.display = 'none';
+    zone.style.display = '';
+  }
+}
+
+// ─── Diff laukų sąrašas ───
+const PDF_FIELDS = [
+  { id: 'plate',   label: 'Valst. nr',   code: 'A'   },
+  { id: 'vin',     label: 'VIN',         code: 'E'   },
+  { id: 'make',    label: 'Markė',       code: 'D1'  },
+  { id: 'model',   label: 'Modelis',     code: 'D3'  },
+  { id: 'color',   label: 'Spalva',      code: 'R'   },
+  { id: 'owner',   label: 'Savininkas',  code: 'C21', fallback: 'C11' },
+  { id: 'address', label: 'Adresas',     code: 'C23', fallback: 'C13' },
+  { id: 'year',    label: 'Metai',       code: '_year' }, // specialus
+  { id: 'engine',  label: 'Galia (kW)',  code: 'P2'  },
+];
+
+function extractPdfValues(data) {
+  const f = data.parsed_fields || {};
+  const get = code => f[code] ? (f[code].value || '').trim() : '';
+  const vals = {};
+
+  for (const field of PDF_FIELDS) {
+    if (field.code === '_year') {
+      const reg = get('B');
+      let yr = '';
+      if (reg) yr = reg.split('-')[0] || '';
+      if (!yr && data.results?.[0]?.decoded?.model_year)
+        yr = String(data.results[0].decoded.model_year);
+      vals[field.id] = yr;
+    } else {
+      let v = get(field.code);
+      if (!v && field.fallback) v = get(field.fallback);
+      if (field.code === 'P2' && v) v = v + ' kW';
+      vals[field.id] = v;
+    }
+  }
+  return vals;
+}
+
+function clearDiffHints() {
+  document.querySelectorAll('.field-hint').forEach(el => el.remove());
+  document.querySelectorAll('.has-diff').forEach(el => el.classList.remove('has-diff'));
+}
+
+function showPdfDiff(data) {
+  const extracted = extractPdfValues(data);
+  window._pdfExtracted = extracted;
+  clearDiffHints();
+
+  let filledCount = 0;
+  let diffCount = 0;
+
+  for (const field of PDF_FIELDS) {
+    const newVal = extracted[field.id] || '';
+    if (!newVal) continue;
+
+    const el = document.getElementById('f-' + field.id);
+    if (!el) continue;
+    const curVal = el.value.trim();
+
+    if (!curVal) {
+      // Tuščias — užpildome iš karto
+      el.value = newVal;
+      el.style.borderColor = 'var(--green)';
+      setTimeout(() => el.style.borderColor = '', 1500);
+      filledCount++;
+    } else if (curVal !== newVal) {
+      // Skiriasi — rodome hint po lauku
+      el.classList.add('has-diff');
+      const hint = document.createElement('div');
+      hint.className = 'field-hint';
+      hint.dataset.fieldId = field.id;
+      hint.dataset.newVal = newVal;
+      hint.innerHTML = `
+        <span class="field-hint-text">Dokumente: <strong>${newVal}</strong></span>
+        <button type="button" class="field-hint-apply" onclick="applyHint('${field.id}','${newVal.replace(/'/g,"\\'")}')">Pakeisti</button>
+      `;
+      el.parentNode.appendChild(hint);
+      diffCount++;
+    }
+  }
+
+  if (filledCount > 0 || diffCount > 0) {
+    let msg = '';
+    if (filledCount > 0) msg += `Užpildyta ${filledCount} laukų`;
+    if (diffCount > 0) msg += (msg ? ' · ' : '') + `${diffCount} skirtumų — patikrinkite žemiau`;
+    toast(msg + ' ✓', diffCount > 0 ? 'info' : 'success');
+  } else {
+    toast('Duomenys jau sutampa ✓', 'success');
+  }
+}
+
+function applyHint(fieldId, val) {
+  const el = document.getElementById('f-' + fieldId);
+  if (el) {
+    el.value = val;
+    el.classList.remove('has-diff');
+    el.style.borderColor = 'var(--green)';
+    setTimeout(() => el.style.borderColor = '', 1500);
+  }
+  // Pašaliname hint
+  const hint = document.querySelector(`.field-hint[data-field-id="${fieldId}"]`);
+  if (hint) hint.remove();
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════
+// CLOSE MODALS ON OVERLAY CLICK
+// ═══════════════════════════════════════════
+document.getElementById('vehicle-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('detail-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDetailModal();
+});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadDashboard();
+</script>
+</body>
+</html>

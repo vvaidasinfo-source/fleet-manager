@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+httpx
+pillow
+pillow-heif
+reportlab
+python-multipart
